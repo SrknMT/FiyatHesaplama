@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Baskı Maliyet ve Fiyatlandırma Aracı v2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #334155; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex justify-center items-start min-h-screen">
+
+    <div class="glass-panel w-full max-w-4xl rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        <div class="bg-indigo-900 text-white p-6 border-b border-indigo-800">
+            <h1 class="text-2xl font-bold flex items-center gap-3">
+                <i class="ph-fill ph-cube"></i> 3D Baskı Fiyatlandırma Hesaplayıcı
+            </h1>
+            <p class="text-indigo-200 text-sm mt-2">Birim maliyetlerinizi ve baskı sürelerinizi girerek anında fiyat analizi yapın.</p>
+        </div>
+
+        <div class="p-6 md:p-8 flex flex-col lg:flex-row gap-8">
+            <!-- Sol: Girdiler -->
+            <div class="flex-1 space-y-6">
+                
+                <!-- Genel Değişkenler -->
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4 flex items-center gap-2">
+                        <i class="ph-fill ph-sliders text-indigo-500"></i> Sabit Değişkenler
+                    </h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Filament (Kg) Fiyatı (₺)</label>
+                            <input type="number" id="inp-filament-kg" value="600" step="10" class="w-full border border-slate-300 rounded-lg p-2 outline-none focus:border-indigo-500 transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Saatlik İşçilik/Makine (₺)</label>
+                            <input type="number" id="inp-hourly-rate" value="50" step="5" class="w-full border border-slate-300 rounded-lg p-2 outline-none focus:border-indigo-500 transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Elektrik (Ürün Başı) (₺)</label>
+                            <input type="number" id="inp-elec" value="0.05" step="0.01" class="w-full border border-slate-300 rounded-lg p-2 outline-none focus:border-indigo-500 transition text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ürün Girdileri -->
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4 flex items-center gap-2 mt-6">
+                        <i class="ph-fill ph-printer text-amber-500"></i> Ürün Baskı Değerleri
+                    </h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Ürün Ağırlığı (Gram)</label>
+                            <input type="number" id="inp-weight" value="15" step="1" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition font-bold text-indigo-700">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Baskı Süresi (Dakika)</label>
+                            <input type="number" id="inp-time-min" value="35" step="5" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition font-bold text-indigo-700">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vergi ve Kâr Ayarları -->
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4 flex items-center gap-2 mt-6">
+                        <i class="ph-fill ph-percent text-emerald-500"></i> Vergi & Kâr Hedefi
+                    </h2>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                         <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Hedef Net Kâr (Maliyet Üzerinden %)</label>
+                            <input type="number" id="inp-target-profit" value="50" class="w-full border border-slate-300 rounded-lg p-2 outline-none focus:border-indigo-500 transition font-bold text-emerald-700">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Toptan İndirim Oranı (%)</label>
+                            <input type="number" id="inp-wholesale-discount" value="20" class="w-full border border-slate-300 rounded-lg p-2 outline-none focus:border-indigo-500 transition">
+                        </div>
+                    </div>
+                    
+                    <div id="tax-settings-container" class="space-y-4 transition-all duration-300">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">KDV Oranı (%)</label>
+                                <input type="number" id="inp-kdv" value="20" class="w-full border border-slate-300 rounded-lg p-2 outline-none focus:border-indigo-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Gelir Vergisi Dilimi (%)</label>
+                                <select id="inp-bracket" class="w-full border border-slate-300 rounded-lg p-2 outline-none focus:border-indigo-500 bg-white">
+                                    <option value="15" selected>%15 (1. Dilim)</option>
+                                    <option value="20">%20 (2. Dilim)</option>
+                                    <option value="27">%27 (3. Dilim)</option>
+                                    <option value="35">%35 (4. Dilim)</option>
+                                    <option value="40">%40 (5. Dilim)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vergi Aç-Kapat -->
+                <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex items-center justify-between">
+                     <div>
+                        <span class="block text-sm font-bold text-indigo-900">Vergili Hesaplama (Fatura Kesilecek)</span>
+                        <span class="block text-xs text-indigo-600 mt-1">Kapatıldığında KDV ve Gelir Vergisi 0 kabul edilir.</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="inp-tax-apply" checked class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                </div>
+
+            </div>
+
+            <!-- Sağ: Sonuçlar -->
+            <div class="w-full lg:w-96 flex flex-col">
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl flex-1 flex flex-col shadow-inner overflow-hidden">
+                    <h3 class="bg-slate-100 text-slate-800 font-bold p-4 border-b border-slate-200 flex justify-between items-center text-sm">
+                        <span><i class="ph-fill ph-receipt"></i> Maliyet Analizi</span>
+                        <button onclick="calculate()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg shadow hover:bg-indigo-700 transition active:scale-95 flex items-center gap-1">
+                            <i class="ph-bold ph-arrows-clockwise"></i> Hesapla
+                        </button>
+                    </h3>
+                    
+                    <div id="result-box" class="p-6 space-y-4 flex-1">
+                        <!-- JS inject -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fmt = num => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(num || 0);
+
+        function toggleTaxSettings() {
+            const isTaxApplied = document.getElementById('inp-tax-apply').checked;
+            const container = document.getElementById('tax-settings-container');
+            if (isTaxApplied) {
+                container.style.opacity = '1';
+                container.style.pointerEvents = 'auto';
+            } else {
+                container.style.opacity = '0.4';
+                container.style.pointerEvents = 'none';
+            }
+            calculate();
+        }
+
+        document.getElementById('inp-tax-apply').addEventListener('change', toggleTaxSettings);
+
+        function calculate() {
+            // Girdileri Al
+            const filamentKgPrice = parseFloat(document.getElementById('inp-filament-kg').value) || 0;
+            const hourlyRate = parseFloat(document.getElementById('inp-hourly-rate').value) || 0;
+            const elecCost = parseFloat(document.getElementById('inp-elec').value) || 0;
+            
+            const weightGr = parseFloat(document.getElementById('inp-weight').value) || 0;
+            const timeMin = parseFloat(document.getElementById('inp-time-min').value) || 0;
+            
+            let kdvRate = parseFloat(document.getElementById('inp-kdv').value) || 0;
+            let bracketRate = parseFloat(document.getElementById('inp-bracket').value) || 0;
+            
+            const targetMarkup = (parseFloat(document.getElementById('inp-target-profit').value) || 0) / 100;
+            const wholesaleDiscount = (parseFloat(document.getElementById('inp-wholesale-discount').value) || 0) / 100;
+            const isTaxApplied = document.getElementById('inp-tax-apply').checked;
+
+            if (!isTaxApplied) {
+                kdvRate = 0;
+                bracketRate = 0;
+            } else {
+                kdvRate = kdvRate / 100;
+                bracketRate = bracketRate / 100;
+            }
+
+            // Ham Maliyet
+            const hammaddeMaliyeti = (filamentKgPrice / 1000) * weightGr;
+            const zamanMaliyeti = (hourlyRate / 60) * timeMin;
+            const hamMaliyet = hammaddeMaliyeti + zamanMaliyeti + elecCost;
+
+            // Kârı maliyetin yüzdesi olarak hesaplıyoruz (Markup)
+            const hedefNetKar = hamMaliyet * targetMarkup;
+
+            let incomeTaxLoad = 0;
+            let vergiOncesiKar = hedefNetKar;
+
+            if (isTaxApplied && bracketRate < 1) {
+                // Net kâra ulaşmak için gelir vergisini (brüt kâr üzerinden) tersine hesaplıyoruz.
+                // Brüt Kar (Vergi Öncesi) = Net Kâr / (1 - Vergi Dilimi)
+                vergiOncesiKar = hedefNetKar / (1 - bracketRate);
+                incomeTaxLoad = vergiOncesiKar * bracketRate;
+            }
+
+            // Satış Fiyatları
+            const netSatisFiyati = hamMaliyet + vergiOncesiKar;
+            const kdvLoad = netSatisFiyati * kdvRate;
+            const perakendeFiyatKdvli = netSatisFiyati + kdvLoad;
+            
+            const toptanFiyatKdvli = perakendeFiyatKdvli * (1 - wholesaleDiscount);
+
+            const resBox = document.getElementById('result-box');
+
+            // Çıktı Oluşturma
+            resBox.innerHTML = `
+                <div class="space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Maliyet Kırılımı</h4>
+                    <div class="flex justify-between text-sm"><span class="text-slate-600">Hammadde (${weightGr}g):</span> <span class="font-semibold text-slate-800">${fmt(hammaddeMaliyeti)}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-600">İşçilik/Makine (${timeMin}dk):</span> <span class="font-semibold text-slate-800">${fmt(zamanMaliyeti)}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-600">Elektrik:</span> <span class="font-semibold text-slate-800">${fmt(elecCost)}</span></div>
+                    <div class="flex justify-between text-sm pt-2 border-t border-slate-200 mt-2">
+                        <span class="text-slate-700 font-bold">Toplam Ham Maliyet:</span> 
+                        <b class="text-slate-900">${fmt(hamMaliyet)}</b>
+                    </div>
+                </div>
+
+                <div class="space-y-2 pt-4 border-t border-slate-200 mt-4">
+                    ${isTaxApplied ? `
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">Gelir Vergisi Yükü:</span> <b class="text-amber-600">${fmt(incomeTaxLoad)}</b></div>
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">Hesaplanan KDV:</span> <b class="text-sky-600">${fmt(kdvLoad)}</b></div>
+                    ` : `
+                         <div class="text-center text-xs font-bold text-amber-600 bg-amber-50 py-1.5 rounded border border-amber-200">
+                             <i class="ph-fill ph-warning-circle"></i> Vergi yükleri dahil edilmedi (Faturasız)
+                         </div>
+                    `}
+                    <div class="flex justify-between text-sm pt-2">
+                        <span class="text-slate-700 font-bold">Hedeflenen Net Kâr (%${targetMarkup*100}):</span> 
+                        <b class="text-emerald-600">${fmt(hedefNetKar)}</b>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t-2 border-dashed border-slate-300">
+                    <div class="bg-indigo-600 rounded-xl p-4 text-center text-white shadow-lg mb-3">
+                        <span class="block text-xs font-medium text-indigo-200 uppercase tracking-wide mb-1">Perakende Satış (1 Adet)</span>
+                        <span class="block text-3xl font-black">${fmt(perakendeFiyatKdvli)}</span>
+                        ${isTaxApplied ? '<span class="block text-[10px] text-indigo-300 mt-1">KDV DAHİL</span>' : ''}
+                    </div>
+
+                    <div class="bg-white border-2 border-slate-200 rounded-xl p-3 text-center shadow-sm">
+                        <span class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Toptan Satış (%${(wholesaleDiscount*100)} İndirimli)</span>
+                        <span class="block text-xl font-bold text-slate-800">${fmt(toptanFiyatKdvli)}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Inputlar değiştiğinde otomatik hesapla
+        document.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', calculate);
+            el.addEventListener('change', calculate);
+        });
+        
+        // İlk açılış
+        calculate();
+
+    </script>
+</body>
+</html>
